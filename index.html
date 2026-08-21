@@ -23,6 +23,7 @@
     --sports:#4CD68A;   --sports-bg:#1C332A;
     --social:#6FA3FF;   --social-bg:#1C2740;
     --civic:#C98EFA;    --civic-bg:#2C2140;
+    --business:#4FD1C5; --business-bg:#163330;
   }
   *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
   body{
@@ -35,14 +36,14 @@
   input{ font-family:inherit; }
 
   #frame{
-    width:100%; max-width:420px; min-height:100vh; background:var(--bg);
+    width:100%; max-width:420px; height:100vh; background:var(--bg);
     position:relative; overflow:hidden; display:flex; flex-direction:column;
     box-shadow:0 0 0 1px #000;
   }
-  @media(min-width:500px){ body{ padding:24px 0; } #frame{ min-height:calc(100vh - 48px); border-radius:36px; } }
+  @media(min-width:500px){ body{ padding:24px 0; } #frame{ height:calc(100vh - 48px); border-radius:36px; } }
 
-  /* ---- app bar ---- */
-  .appbar{ padding:14px 16px 10px; position:sticky; top:0; z-index:25; background:var(--bg); }
+  /* ---- app bar (fixed, always visible, content scrolls beneath it) ---- */
+  .appbar{ padding:14px 16px; flex:0 0 auto; z-index:25; background:var(--bg); border-bottom:1px solid var(--stroke); }
   .appbar-row{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
   .brand{ display:flex; align-items:center; gap:7px; }
   .brand .mark{ width:26px;height:26px;border-radius:8px; background:var(--urgent); display:flex;align-items:center;justify-content:center; font-size:0.85rem; }
@@ -76,7 +77,7 @@
   .chip-btn.active{ background:var(--ink); border-color:var(--ink); color:#101210; }
 
   /* ---- live-now rail ---- */
-  .live-rail{ display:flex; gap:14px; overflow-x:auto; padding:14px 16px 4px; }
+  .live-rail{ display:flex; gap:14px; overflow-x:auto; padding:6px 0 4px; margin:0 -16px; padding-left:16px; }
   .live-item{ flex:0 0 auto; display:flex; flex-direction:column; align-items:center; gap:5px; width:60px; }
   .live-ring{ width:54px;height:54px;border-radius:50%; padding:2.5px; background:conic-gradient(var(--urgent), var(--weekend), var(--urgent)); display:flex; align-items:center; justify-content:center; }
   .live-ring .inner{ width:100%;height:100%; border-radius:50%; background:var(--bg); display:flex;align-items:center;justify-content:center; font-size:1.2rem; }
@@ -223,6 +224,7 @@ const CAT_META = {
   sports:{ label:'Sports & Fitness', color:'var(--sports)', bg:'var(--sports-bg)' },
   social:{ label:'Social & Leisure', color:'var(--social)', bg:'var(--social-bg)' },
   civic:{ label:'Civic & Awareness', color:'var(--civic)', bg:'var(--civic-bg)' },
+  business:{ label:'Local Business', color:'var(--business)', bg:'var(--business-bg)' },
 };
 const BADGE_META = {
   high:{label:'Reliable', color:'var(--sports)', bg:'var(--sports-bg)'},
@@ -269,6 +271,12 @@ const state = {
     { id:6, title:'Road safety awareness walk for the school crossing', category:'civic', emoji:'📣', tier:'weekend', startLabel:'Sat · 9:00 AM', distanceKm:2.6, capacity:30, going:11, waitlist:0, saved:false,
       host:{name:'Dana F.', verified:true}, locationType:'public', locationName:'Elm Street Crosswalk', userRsvp:'none', live:false,
       attendees:[{name:'Dana F.',badge:'high'},{name:'Priya K.',badge:'high'}], messages:[] },
+    { id:9, title:'Grand opening — free samples all weekend', category:'business', emoji:'🥐', tier:'weekend', startLabel:'Sat · 10:00 AM', distanceKm:0.9, capacity:null, going:22, waitlist:0, saved:false,
+      host:{name:'Maple St. Bakery', verified:true}, locationType:'public', locationName:'214 Maple Street', userRsvp:'none', live:false,
+      attendees:[{name:'Maple St. Bakery',badge:'high'},{name:'Renee P.',badge:'high'}], messages:[] },
+    { id:10, title:'Free tool sharpening today only, bring what you\\'ve got', category:'business', emoji:'🔧', tier:'now', startLabel:'Until 6pm', distanceKm:1.6, capacity:null, going:7, waitlist:0, saved:false,
+      host:{name:'Corner Hardware', verified:true}, locationType:'public', locationName:'88 5th Ave', userRsvp:'none', live:true,
+      attendees:[{name:'Corner Hardware',badge:'high'}], messages:[] },
     { id:7, title:'Anyone know a good electrician? Outlet keeps tripping', category:'social', emoji:'💬', tier:'general', startLabel:null, distanceKm:1.1, capacity:null, going:0, waitlist:0, saved:false,
       host:{name:'Theo B.', verified:false}, locationType:'public', locationName:null, userRsvp:'none', discussion:true, replies:3, attendees:[], messages:[] },
     { id:8, title:'Lost cat — grey tabby, green collar, answers to Biscuit', category:'civic', emoji:'💬', tier:'general', startLabel:null, distanceKm:0.4, capacity:null, going:0, waitlist:0, saved:false,
@@ -342,7 +350,7 @@ function submitCreate(){
   if(!cs.category || !cs.title.trim()){ showToast('Add a category and title first'); return; }
   const tierMap = {'today-2h':'now','today-6h':'now','sat':'weekend','sun':'weekend'};
   const labelMap = {'today-2h':'Starts in 2h','today-6h':'Starts in 6h','sat':'Sat · time TBD','sun':'Sun · time TBD'};
-  const emojiMap = {sports:'🏃', social:'🎉', civic:'📣'};
+  const emojiMap = {sports:'🏃', social:'🎉', civic:'📣', business:'🏪'};
   const newEvent = {
     id: Date.now(), title: cs.title, category: cs.category, emoji: emojiMap[cs.category],
     tier: tierMap[cs.when] || 'now', startLabel: labelMap[cs.when], distanceKm: 0.3,
@@ -380,14 +388,8 @@ function renderRadiusScreen(){
   const list = filteredEvents();
   const liveNow = state.events.filter(e=>e.live && e.distanceKm<=state.radius);
   return `
-    <div class="appbar">
-      <div class="appbar-row">
-        <div class="brand"><div class="mark">🧭</div><span>Radius</span></div>
-        <div class="appbar-actions">
-          <button class="icon-btn" onclick="toggleSearch()">🔍</button>
-          <button class="icon-btn" onclick="toggleNotif()">🔔${unreadCount()>0?'<span class="badge-dot"></span>':''}</button>
-        </div>
-      </div>
+    ${renderAppBar()}
+    <div class="scroll">
       ${state.searchOpen ? `
         <div class="search-row">
           <span>🔍</span>
@@ -409,18 +411,31 @@ function renderRadiusScreen(){
         <button class="chip-btn ${state.category==='sports'?'active':''}" onclick="setCategory('sports')">🏃 Sports</button>
         <button class="chip-btn ${state.category==='social'?'active':''}" onclick="setCategory('social')">🎉 Social</button>
         <button class="chip-btn ${state.category==='civic'?'active':''}" onclick="setCategory('civic')">📣 Civic</button>
+        <button class="chip-btn ${state.category==='business'?'active':''}" onclick="setCategory('business')">🏪 Businesses</button>
       </div>
-    </div>
-    ${liveNow.length>0 ? `
-    <div class="live-rail">
-      ${liveNow.map(e=>`
-        <div class="live-item" onclick="openEvent(${e.id})">
-          <div class="live-ring"><div class="inner">${e.emoji}</div></div>
-          <span>${e.title.split(' ').slice(0,2).join(' ')}</span>
-        </div>`).join('')}
-    </div>` : ''}
-    <div class="scroll">
+      ${liveNow.length>0 ? `
+      <div class="live-rail">
+        ${liveNow.map(e=>`
+          <div class="live-item" onclick="openEvent(${e.id})">
+            <div class="live-ring"><div class="inner">${e.emoji}</div></div>
+            <span>${e.title.split(' ').slice(0,2).join(' ')}</span>
+          </div>`).join('')}
+      </div>` : ''}
       ${state.radiusView==='radar' ? renderRadar(list) : renderList(list)}
+    </div>
+  `;
+}
+
+function renderAppBar(){
+  return `
+    <div class="appbar">
+      <div class="appbar-row">
+        <div class="brand"><div class="mark">🧭</div><span>Nook</span></div>
+        <div class="appbar-actions">
+          <button class="icon-btn" onclick="toggleSearch()">🔍</button>
+          <button class="icon-btn" onclick="toggleNotif()">🔔${unreadCount()>0?'<span class="badge-dot"></span>':''}</button>
+        </div>
+      </div>
     </div>
   `;
 }
@@ -600,7 +615,7 @@ function renderNotifPanel(){
 function renderChatsScreen(){
   const chats = state.events.filter(e=>!e.discussion && e.userRsvp==='going' && (e.tier==='now'||e.tier==='weekend'));
   return `
-    <div class="appbar"><div class="appbar-row"><div class="brand"><div class="mark">💬</div><span>Chats</span></div></div></div>
+    ${renderAppBar()}
     <div class="scroll">
       ${chats.length===0 ? `<div class="empty-state"><div class="em">💬</div>RSVP to an event to unlock its group chat here.</div>` :
         chats.map(ev=>{
@@ -622,13 +637,14 @@ function renderChatsScreen(){
 function renderCreateScreen(){
   const cs = state.createStep;
   return `
-    <div class="appbar"><div class="appbar-row"><div class="brand"><div class="mark">➕</div><span>New post</span></div></div></div>
+    ${renderAppBar()}
     <div class="scroll">
       <div class="field"><label>What are you hosting?</label></div>
       <div class="cat-pick">
         <div class="opt ${cs.category==='sports'?'selected':''}" onclick="pickCreateCategory('sports')"><div class="em">🏃</div><div class="nm">Sports & Fitness</div></div>
         <div class="opt ${cs.category==='social'?'selected':''}" onclick="pickCreateCategory('social')"><div class="em">🎉</div><div class="nm">Social & Leisure</div></div>
-        <div class="opt ${cs.category==='civic'?'selected':''}" onclick="pickCreateCategory('civic')" style="grid-column:1/3;"><div class="em">📣</div><div class="nm">Civic & Awareness</div></div>
+        <div class="opt ${cs.category==='civic'?'selected':''}" onclick="pickCreateCategory('civic')"><div class="em">📣</div><div class="nm">Civic & Awareness</div></div>
+        <div class="opt ${cs.category==='business'?'selected':''}" onclick="pickCreateCategory('business')"><div class="em">🏪</div><div class="nm">Local Business</div></div>
       </div>
       ${cs.category ? `
       <div class="field"><label>Title</label><input type="text" value="${cs.title}" placeholder="e.g. Saturday morning run" oninput="setCreateField('title', this.value)"></div>
@@ -663,7 +679,7 @@ function renderCreateScreen(){
 function renderProfileScreen(){
   const u = state.user;
   return `
-    <div class="appbar"><div class="appbar-row"><div class="brand"><div class="mark">🙂</div><span>Profile</span></div></div></div>
+    ${renderAppBar()}
     <div class="scroll">
       <div class="profile-head">
         <div class="profile-avatar">${u.initial}</div>
@@ -699,8 +715,8 @@ function renderBottomNav(){
     <div class="bottomnav">
       <button class="nav-btn ${state.screen==='radius'?'active':''}" onclick="switchScreen('radius')"><span class="ic">🧭</span>Radius</button>
       <button class="nav-btn ${state.screen==='chats'?'active':''}" onclick="switchScreen('chats')"><span class="ic">💬</span>Chats</button>
-      <button class="nav-btn" onclick="switchScreen('create')"><span class="ic nav-fab">➕</span></button>
       <button class="nav-btn ${state.screen==='profile'?'active':''}" onclick="switchScreen('profile')"><span class="ic">🙂</span>Profile</button>
+      <button class="nav-btn" onclick="switchScreen('create')"><span class="ic nav-fab">➕</span></button>
     </div>
   `;
 }
