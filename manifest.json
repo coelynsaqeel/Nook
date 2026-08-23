@@ -1,0 +1,17 @@
+{
+  "name": "Nook",
+  "short_name": "Nook",
+  "description": "See what's happening down the street.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#141715",
+  "theme_color": "#141715",
+  "orientation": "portrait",
+  "icons": [
+    { "src": "icon-192x192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512x512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-192x192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "icon-512x512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
